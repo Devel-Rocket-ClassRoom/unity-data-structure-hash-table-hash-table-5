@@ -19,11 +19,11 @@ public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
         buckets = new HashSlot<TKey, TValue>[capacity];
     }
 
-    // 내부 배열 크기
+    
     public int Capacity => buckets.Length;
-    // 저장된 원소 수
+    
     public int Count => count;
-    // 읽기 전용 여부 (항상 false)
+  
     public bool IsReadOnly => false;
 
     // 저장된 모든 키 목록
