@@ -20,26 +20,29 @@ public class UiHashTableTest : MonoBehaviour
     public Button clearButton;
 
     // --- 내부 사용 필드 ---
-    private HashTableSnapshot<string, int> snapShot = new DummySimple().GetSnapshot();
+    private HashTableSnapshot<string, int> snapShot;
     private IHashTable<string, int> table;
     private int modeIndex; // clear후 다시 생성할 때 mode 기록용
-    private string seletedKey;
+    private string selectedKey;
 
     private void Awake()
     {
+        selectedKey = string.Empty;
+        table = new SimpleHashTable<string, int>();
+        snapShot = table.GetSnapshot();
+        
         dropdown.onValueChanged.AddListener(OnModeChanged);
+        openDropdown.onValueChanged.AddListener(OnProbeModeChanged);
         addButton.onClick.AddListener(OnAddSlot);
         clearButton.onClick.AddListener(OnClearSlot);
-        removeButton.onClick.AddListner(OnRemoveSlot);
-
+        removeButton.onClick.AddListener(OnRemoveSlot);
     }
     private void Start()
     {
         VisualizeSlots();
     }
 
-
-    public void OnModeChanged(int index)
+    private void OnModeChanged(int index)
     {
         int count = content.childCount;
         for (int i = count - 1; i >= 0; i--)
@@ -51,7 +54,7 @@ public class UiHashTableTest : MonoBehaviour
         {
             case 0:
                 modeIndex = index;
-                snapShot = new DummySimple().GetSnapshot();
+                table = new SimpleHashTable<string, int>();
                 break;
             case 1: 
                 modeIndex = index;
@@ -64,6 +67,31 @@ public class UiHashTableTest : MonoBehaviour
         }
         snapShot = table.GetSnapshot();
         VisualizeSlots();
+    }
+
+    private void OnProbeModeChanged(int index)
+    {
+        int count = content.childCount;
+        for (int i = count - 1; i >= 0; i--)
+        {
+            Destroy(content.GetChild(i).gameObject);
+        }
+
+        switch (index)
+        {
+            case 0:
+                table = new OpenAddressingHashTable<string, int>(ProbingStrategy.Linear);
+                break;
+            case 1:
+                table = new OpenAddressingHashTable<string, int>(ProbingStrategy.Quadratic);
+                break;
+            case 2:
+                table = new OpenAddressingHashTable<string, int>(ProbingStrategy.DoubleHash);
+                break;
+        }
+        snapShot = table.GetSnapshot();
+        VisualizeSlots();
+
     }
 
     private void SelectSlot(string key)
@@ -82,8 +110,7 @@ public class UiHashTableTest : MonoBehaviour
             var slotData = snapShot.Slots[i];
 
             slot.indexText.text = $"i : {i}";
-            string slotKey = slotData.Key;
-            slot.onClicked = () => SelectSlot(slotKey);
+            string slotKey = string.Empty;
 
             if (snapShot.TableType == "Chaining")
             {
@@ -92,7 +119,8 @@ public class UiHashTableTest : MonoBehaviour
                     var parts = new StringBuilder();
                     foreach (var node in slotData.Chain)
                     {
-                        parts.Append($"K : {node.Key} v : {node.Value}\t");
+                        slotKey = node.Key;
+                        parts.Append($"K : {node.Key} V : {node.Value}\t");
                     }
                     slot.kvText.text = parts.ToString();
                     Debug.Log($"키-밸류: {snapShot.Slots[i].Key} - {snapShot.Slots[i].Value}");
@@ -101,10 +129,13 @@ public class UiHashTableTest : MonoBehaviour
             }
             else
             {
+                slotKey = slotData.Key;
                 slot.kvText.text = snapShot.Slots[i].State == SlotState.Occupied ? $"K: {snapShot.Slots[i].Key}, V : {snapShot.Slots[i].Value} ": string.Empty;
                 Debug.Log($"키-밸류: {snapShot.Slots[i].Key} - {snapShot.Slots[i].Value}");
                 slot.background.color = snapShot.Slots[i].State == SlotState.Occupied ? Color.green : Color.white;
             } 
+
+            slot.onClicked = () => SelectSlot(slotKey);
         }
     }
 
@@ -151,7 +182,7 @@ public class UiHashTableTest : MonoBehaviour
         switch (modeIndex)
         {
             case 0:
-                snapShot = new DummySimple().GetSnapshot();
+                table = new SimpleHashTable<string, int>();
                 break;
             case 1:
                 table = new ChainingHashTable<string, int>();
@@ -172,6 +203,43 @@ public class UiHashTableTest : MonoBehaviour
     
     private void OnRemoveSlot()
     {
-        
+        if (string.IsNullOrEmpty(selectedKey))
+        {
+            Debug.Log("[Remove] 선택된 슬롯에 키가 없습니다.");
+            return;
+        }
+
+        if (modeIndex == 1)
+        {
+            for (int i = 0; i < snapShot.Capacity; i++)
+            {
+                var slotData = snapShot.Slots[i];
+                
+                if (slotData.Chain != null && slotData.Chain.Count > 0)
+                {
+                    var parts = new StringBuilder();
+                    foreach (var node in slotData.Chain)
+                    {
+                        if (selectedKey != node.Key)
+                        {
+                            parts.Append($"K : {node.Key} V : {node.Value}\t");
+                            
+                        }
+                    }
+                    var targetSlot = content.GetChild(i).GetComponent<UiHashSlot>();
+                    targetSlot.kvText.text = parts.ToString();
+                    targetSlot.background.color = parts.Length > 0 ? Color.green : Color.white;
+                }
+            }
+        }
+        else
+        {
+            table.Remove(selectedKey);
+            Debug.Log($"[Remove] 선택된 {selectedKey}가 삭제됐습니다.");
+        }
+        selectedKey = null;
+
+
+        ClearSlot();
     }
 }
