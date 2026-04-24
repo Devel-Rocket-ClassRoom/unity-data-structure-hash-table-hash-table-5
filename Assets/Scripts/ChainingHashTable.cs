@@ -6,8 +6,8 @@ public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
 {
     // 초기 배열 크기
     private const int DefaultCapacity = 16;
-    // 이 비율을 넘으면 Resize 실행 (count / Capacity > 0.75)
-    private const float LoadFactor = 0.75f;
+    // 이 비율을 넘으면 Resize 실행 (count / Capacity > 0.6)
+    private const double LoadFactor = 0.6;
 
     // 슬롯 배열 — 각 슬롯은 체인(List)을 가짐
     private HashSlot<TKey, TValue>[] buckets;
