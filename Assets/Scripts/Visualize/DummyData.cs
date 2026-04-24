@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 // "apple", "cheery"가 충돌났다고 가정
-public struct DummySimple
+public struct DummySimple 
 {
     public HashTableSnapshot<string, int> GetSnapshot()
     {

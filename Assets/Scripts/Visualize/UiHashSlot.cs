@@ -6,4 +6,5 @@ public class UiHashSlot : MonoBehaviour
     public TextMeshProUGUI indexText;
     public TextMeshProUGUI kvText;
     public Image background;
+    public Button slotButton;
 }

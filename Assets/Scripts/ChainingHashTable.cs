@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
 {
@@ -269,6 +270,9 @@ public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
     {
         // 2배 크기의 새 배열 생성
         var newBuckets = new HashSlot<TKey, TValue>[Capacity * 2];
+
+        Debug.Log($"리사이즈 호출 {Capacity}");
+
 
         // 기존 모든 원소를 새 배열에 재해시해서 삽입
         foreach (var slot in buckets)
