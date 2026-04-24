@@ -7,6 +7,8 @@ public class UiHashTableTest : MonoBehaviour
     public UiHashSlot prefab;
     public Transform content;
     public TMP_Dropdown dropdown;
+    public TMP_InputField keyInputField;
+    public TMP_InputField valueInputField;
     private HashTableSnapshot<string, int> slots = new DummySimple().GetSnapshot();
 
     private void Awake()
