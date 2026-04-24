@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class OpenAddressingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
 {
@@ -22,6 +23,9 @@ public class OpenAddressingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
     public int Capacity => size;
     public int Count => count;
     public bool IsReadOnly => false;
+
+    public bool isConflict {get; set;}
+    public bool isResized { get; set;}
 
     // ── 해시 함수 ─────────────────────────────────────────────────────────
 
@@ -46,6 +50,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
     // attempt번째 프로브 인덱스 반환
     public int GetProbeIndex(TKey key, int attempt)
     {
+        Debug.Log($"[AddProbing] {key} - {attempt} : {strategy}");
         int h = GetHash(key);
         switch (strategy)
         {
@@ -64,6 +69,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
 
     public void Add(TKey key, TValue value)
     {
+        isResized = false;
         if (key == null)
             throw new ArgumentNullException(nameof(key));
         if (ContainsKey(key))
@@ -71,6 +77,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
 
         if ((double)count / size > LoadFactor)
             Resize();
+            isResized = true;
 
         InsertInternal(table, size, key, value);
         count++;
@@ -114,6 +121,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
         }
         set
         {
+            isConflict = false;
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
 
@@ -128,6 +136,7 @@ public class OpenAddressingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
                 if (slot.State == SlotState.Occupied && EqualityComparer<TKey>.Default.Equals(slot.Key, key))
                 {
                     table[idx].Value = value;
+                    isConflict = true;
                     return;
                 }
             }

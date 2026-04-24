@@ -50,4 +50,7 @@ public interface IHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 
     // 내부 배열 크기
     int Capacity { get; }
+
+    bool isResized { get; }
+    bool isConflict { get; }
 }

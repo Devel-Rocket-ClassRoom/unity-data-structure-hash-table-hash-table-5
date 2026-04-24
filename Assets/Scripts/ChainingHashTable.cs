@@ -26,6 +26,8 @@ public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
     public int Count => count;
   
     public bool IsReadOnly => false;
+    public bool isConflict {get; set;}
+    public bool isResized { get; set;}
 
     // 저장된 모든 키 목록
     public ICollection<TKey> Keys
@@ -73,10 +75,12 @@ public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
         }
         set
         {
+            isConflict = false;
             int index = GetHash(key);
             // 체인이 있으면 기존 키 탐색해서 값 교체
             if (buckets[index].Chain != null)
             {
+                isConflict = true;
                 for (int i = 0; i < buckets[index].Chain.Count; i++)
                 {
                     if (buckets[index].Chain[i].Key.Equals(key))
@@ -122,6 +126,7 @@ public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
     // 키-값 추가 (중복 키면 예외)
     public void Add(TKey key, TValue value)
     {
+        isResized = false;
         // 키를 배열 인덱스로 변환
         int index = GetHash(key);
 
@@ -146,6 +151,7 @@ public class ChainingHashTable<TKey, TValue> : IHashTable<TKey, TValue>
         // 로드팩터 초과 시 배열 크기 2배로 확장
         if ((float)count / Capacity > LoadFactor)
             Resize();
+            isResized = true;
     }
 
     // KeyValuePair 버전 Add — 내부적으로 Add(key, value) 호출

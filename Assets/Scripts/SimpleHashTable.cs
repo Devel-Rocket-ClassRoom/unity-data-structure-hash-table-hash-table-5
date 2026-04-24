@@ -9,7 +9,8 @@ public class SimpleHashTable<TKey, TValue> : IHashTable<TKey, TValue>
 
     private HashSlot<TKey, TValue>[] table;
     private int count;
-
+    public bool isConflict { get; set; }
+    public bool isResized { get; set;}
     public SimpleHashTable(int capacity = DefaultCapacity)
     {
         table = new HashSlot<TKey, TValue>[capacity];
@@ -27,10 +28,12 @@ public class SimpleHashTable<TKey, TValue> : IHashTable<TKey, TValue>
 
     public void Add(TKey key, TValue value)
     {
+        isResized = false;
         if (key == null) throw new ArgumentNullException(nameof(key));
 
         if ((float)count / Capacity >= LoadFactor)
             Resize();
+            isResized = true;
 
         int idx = GetHash(key);
 
@@ -79,12 +82,14 @@ public class SimpleHashTable<TKey, TValue> : IHashTable<TKey, TValue>
         }
         set
         {
+            isConflict = false;
             if (key == null) throw new ArgumentNullException(nameof(key));
             int idx = GetHash(key);
             if (table[idx].State == SlotState.Occupied &&
                 EqualityComparer<TKey>.Default.Equals(table[idx].Key, key))
             {
                 table[idx].Value = value;
+                isConflict = true;
                 return;
             }
             Add(key, value);

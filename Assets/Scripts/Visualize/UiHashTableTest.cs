@@ -1,7 +1,7 @@
 using UnityEngine;
-using System;
 using TMPro;
 using UnityEngine.UI;
+using System;
 using System.Text;
 using System.Collections;
 
@@ -10,7 +10,8 @@ public class UiHashTableTest : MonoBehaviour
 {
     // --- 인스펙터 연결 필드 ---
     public UiHashSlot prefab;
-    public Transform content;
+    public TextMeshProUGUI logText;
+    public Transform slotContent;
     public TMP_Dropdown dropdown;
     public TMP_Dropdown openDropdown;
     public TMP_InputField keyInputField;
@@ -24,13 +25,18 @@ public class UiHashTableTest : MonoBehaviour
     private IHashTable<string, int> table;
     private int modeIndex; // clear후 다시 생성할 때 mode 기록용
     private string selectedKey;
+    private StringBuilder logs;
+    private int capacity;
 
     private void Awake()
     {
         selectedKey = string.Empty;
         table = new SimpleHashTable<string, int>();
         snapShot = table.GetSnapshot();
-        
+        logs = new StringBuilder();
+        logText.text = logs.ToString();
+        capacity = table.Capacity;
+
         dropdown.onValueChanged.AddListener(OnModeChanged);
         openDropdown.onValueChanged.AddListener(OnProbeModeChanged);
         addButton.onClick.AddListener(OnAddSlot);
@@ -44,10 +50,10 @@ public class UiHashTableTest : MonoBehaviour
 
     private void OnModeChanged(int index)
     {
-        int count = content.childCount;
+        int count = slotContent.childCount;
         for (int i = count - 1; i >= 0; i--)
         {
-            Destroy(content.GetChild(i).gameObject);
+            Destroy(slotContent.GetChild(i).gameObject);
         }
 
         switch (index)
@@ -55,41 +61,52 @@ public class UiHashTableTest : MonoBehaviour
             case 0:
                 modeIndex = index;
                 table = new SimpleHashTable<string, int>();
+                capacity = table.Capacity;
+                logs.Append("Change Type of HashTable: Simple\n");
                 break;
             case 1: 
                 modeIndex = index;
                 table = new ChainingHashTable<string, int>();
+                capacity = table.Capacity;
+                logs.Append("Change Type of HashTable: Chaining\n");
                 break;
             case 2:
                 modeIndex = index;
                 table = new OpenAddressingHashTable<string, int>();
+                capacity = table.Capacity;
+                logs.Append("Change Type of HashTable: OpenAddressing\n");
                 break;
         }
         snapShot = table.GetSnapshot();
+        logText.text = logs.ToString();
         VisualizeSlots();
     }
 
     private void OnProbeModeChanged(int index)
     {
-        int count = content.childCount;
+        int count = slotContent.childCount;
         for (int i = count - 1; i >= 0; i--)
         {
-            Destroy(content.GetChild(i).gameObject);
+            Destroy(slotContent.GetChild(i).gameObject);
         }
 
         switch (index)
         {
             case 0:
                 table = new OpenAddressingHashTable<string, int>(ProbingStrategy.Linear);
+                logs.Append("Change Probing Strategy: Linear\n");
                 break;
             case 1:
                 table = new OpenAddressingHashTable<string, int>(ProbingStrategy.Quadratic);
+                logs.Append("Change Probing Strategy: Quadratic\n");
                 break;
             case 2:
                 table = new OpenAddressingHashTable<string, int>(ProbingStrategy.DoubleHash);
+                logs.Append("Change Probing Strategy: DoubleHash\n");
                 break;
         }
         snapShot = table.GetSnapshot();
+        logText.text = logs.ToString();
         VisualizeSlots();
 
     }
@@ -102,11 +119,11 @@ public class UiHashTableTest : MonoBehaviour
 
     public void VisualizeSlots()
     {
-        Debug.Log($"[VisualizeSlots] 호출됨 - 현재 childCount: {content.childCount}, capacity: {snapShot.Capacity}");
+        Debug.Log($"[VisualizeSlots] 호출됨 - 현재 childCount: {slotContent.childCount}, capacity: {snapShot.Capacity}");
 
         for (int i = 0; i < snapShot.Capacity; i++)
         {
-            var slot = Instantiate(prefab, content);
+            var slot = Instantiate(prefab, slotContent);
             var slotData = snapShot.Slots[i];
 
             slot.indexText.text = $"i : {i}";
@@ -158,6 +175,24 @@ public class UiHashTableTest : MonoBehaviour
 
         table[key] = value;
 
+        logs.Append($"ADD: {key} - {value}\n");
+        var conflict = false;
+        switch (modeIndex)
+        {
+            case 0:
+                conflict = ((SimpleHashTable<string, int>)table).isConflict;
+                break;
+            case 1:
+                conflict = ((ChainingHashTable<string, int>)table).isConflict;
+                break;
+            case 2:
+                conflict = ((OpenAddressingHashTable<string, int>)table).isConflict;
+                break;
+        }
+        if (conflict)
+            logs.Append($"Conflict: {key}\n");
+        logText.text = logs.ToString();
+        
         Debug.Log($"[Add] Debug: {key} - {value}");
 
         ClearSlot();
@@ -168,9 +203,9 @@ public class UiHashTableTest : MonoBehaviour
     private void ClearSlot()
     {
         snapShot = table.GetSnapshot();
-        for (int i = content.childCount - 1; i >= 0; i--)
+        for (int i = slotContent.childCount - 1; i >= 0; i--)
         {
-            Destroy(content.GetChild(i).gameObject);
+            Destroy(slotContent.GetChild(i).gameObject);
         }
 
         StartCoroutine(VisualizeNextFrame());
@@ -193,10 +228,13 @@ public class UiHashTableTest : MonoBehaviour
         }
 
         snapShot = table.GetSnapshot();
-        for (int i = content.childCount - 1; i >= 0; i--)
+        for (int i = slotContent.childCount - 1; i >= 0; i--)
         {
-            Destroy(content.GetChild(i).gameObject);
+            Destroy(slotContent.GetChild(i).gameObject);
         }
+
+        logs.Append($"Clear: Clear All Slots");
+        logText.text = logs.ToString();
 
         StartCoroutine(VisualizeNextFrame());
     }
@@ -217,28 +255,30 @@ public class UiHashTableTest : MonoBehaviour
                 
                 if (slotData.Chain != null && slotData.Chain.Count > 0)
                 {
+                    bool found = false;
                     var parts = new StringBuilder();
                     foreach (var node in slotData.Chain)
                     {
-                        if (selectedKey != node.Key)
+                        if (selectedKey == node.Key)
                         {
-                            parts.Append($"K : {node.Key} V : {node.Value}\t");
+                            found = true;
+                            parts.Replace($"K : {node.Key} V : {node.Value}\t", "");
                             
                         }
                     }
-                    var targetSlot = content.GetChild(i).GetComponent<UiHashSlot>();
+                    var targetSlot = slotContent.GetChild(i).GetComponent<UiHashSlot>();
                     targetSlot.kvText.text = parts.ToString();
                     targetSlot.background.color = parts.Length > 0 ? Color.green : Color.white;
                 }
             }
         }
-        else
-        {
-            table.Remove(selectedKey);
-            Debug.Log($"[Remove] 선택된 {selectedKey}가 삭제됐습니다.");
-        }
+        
+        table.Remove(selectedKey);
+        logs.Append($"Remove: {selectedKey}");
+        logText.text = logs.ToString();
+        Debug.Log($"[Remove] 선택된 {selectedKey}가 삭제됐습니다.");
+        
         selectedKey = null;
-
 
         ClearSlot();
     }
