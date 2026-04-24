@@ -16,6 +16,7 @@
 *.csproj
 *.unityproj
 *.sln
+*.slnx
 *.suo
 *.tmp
 *.user
@@ -31,6 +32,9 @@
 # VS config
 .vsconfig
 .vs/
+
+# VS Code
+.vscode/
 
 # Rider
 .idea/
