@@ -30,7 +30,7 @@ public class UiHashTableTest : MonoBehaviour
         dropdown.onValueChanged.AddListener(OnModeChanged);
         addButton.onClick.AddListener(OnAddSlot);
         clearButton.onClick.AddListener(OnClearSlot);
-        removeButton.onClick.AddListner(OnRemoveSlot);
+        removeButton.onClick.AddListener(OnRemoveSlot);
 
     }
     private void Start()
@@ -66,11 +66,13 @@ public class UiHashTableTest : MonoBehaviour
         VisualizeSlots();
     }
 
+/*
     private void SelectSlot(string key)
     {
         selectedKey = key;
         Debug.Log($"[Select] {key} 선택됨");
     }
+*/
 
     public void VisualizeSlots()
     {
@@ -82,8 +84,8 @@ public class UiHashTableTest : MonoBehaviour
             var slotData = snapShot.Slots[i];
 
             slot.indexText.text = $"i : {i}";
-            string slotKey = slotData.Key;
-            slot.onClicked = () => SelectSlot(slotKey);
+            //string slotKey = slotData.Key;
+            //slot.onClicked = () => SelectSlot(slotKey);
 
             if (snapShot.TableType == "Chaining")
             {
