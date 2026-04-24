@@ -42,7 +42,7 @@ public struct HashTableSnapshot<TKey, TValue>
 // GetSnapshot() / GetHash() / Capacity 가 빠지면 컴파일 에러.
 public interface IHashTable<TKey, TValue> : IDictionary<TKey, TValue>
 {
-    // 시각화 담당자(A)가 호출하는 유일한 창구
+    // 시각화 담당자가 호출하는 유일한 창구
     HashTableSnapshot<TKey, TValue> GetSnapshot();
 
     // 키 → 인덱스 변환 (디버깅 / 시각화에서 직접 확인용)
